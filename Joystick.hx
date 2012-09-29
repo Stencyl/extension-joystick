@@ -46,6 +46,9 @@ class Joystick extends Sprite
 	
 	public var mInnerImageScaleOnTouch:Float;
 	
+	public var mDistance:Float;
+	public var mDirection:Float;
+	
 	public function new() 
 	{
 		super();
@@ -57,6 +60,9 @@ class Joystick extends Sprite
 		mInnerRadius = DEFAULT_INNERRADIUS;
 		mBounds = null;
 		mInnerImageScaleOnTouch = 1.0;
+		
+		mDistance = 0;
+		mDirection = 0;
 	}
 	
 	public function start()
@@ -282,8 +288,12 @@ class Joystick extends Sprite
 			direction += 360;
 		}
 		
-		dispatchEvent(new JoystickEvent(type, distance, direction));
-		dispatchEvent(new JoystickEvent(EVENT_CHANGED, distance, direction));
+		mDistance = distance;
+		mDirection = direction;
+		
+		//I rather just do polling.
+		//dispatchEvent(new JoystickEvent(type, distance, direction));
+		//dispatchEvent(new JoystickEvent(EVENT_CHANGED, distance, direction));
 	}
 	
 	//---
