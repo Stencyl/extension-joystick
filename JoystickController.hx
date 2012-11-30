@@ -70,8 +70,10 @@ class JoystickController
 		}
 	}
 	
-	public static function setX(joystick:Int, x:Int)
+	public static function setX(joystick:Int, x:Float)
 	{
+		x = Std.int(x);
+	
 		initialize();
 	
 		if(joystick == 1 && joystick1.mType == Joystick.JoystickStatic)
@@ -98,8 +100,10 @@ class JoystickController
 		}
 	}
 	
-	public static function setY(joystick:Int, y:Int)
+	public static function setY(joystick:Int, y:Float)
 	{
+		y = Std.int(y);
+		
 		initialize();
 	
 		if(joystick == 1 && joystick1.mType == Joystick.JoystickStatic)
