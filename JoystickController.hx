@@ -27,11 +27,22 @@ class JoystickController
 				inner = Assets.getBitmapData("assets/graphics/inner-joystick.png");
 			}
 			
-			else
+			else if(Engine.SCALE == 1.5)
 			{
-				//TODO
+				outer = Assets.getBitmapData("assets/graphics/outer-joystick@1.5x.png");
+				inner = Assets.getBitmapData("assets/graphics/inner-joystick@1.5x.png");
+			}
+			
+			else if(Engine.SCALE == 2)
+			{
 				outer = Assets.getBitmapData("assets/graphics/outer-joystick@2x.png");
 				inner = Assets.getBitmapData("assets/graphics/inner-joystick@2x.png");
+			}
+			
+			else
+			{
+				outer = Assets.getBitmapData("assets/graphics/outer-joystick@4x.png");
+				inner = Assets.getBitmapData("assets/graphics/inner-joystick@4x.png");
 			}
 			
 			joystick1 = createJoystick(target, outer, inner, Joystick.JoystickStatic);

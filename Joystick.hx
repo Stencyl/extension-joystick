@@ -138,7 +138,7 @@ class Joystick extends Sprite
 			
 			else if(mType == JoystickAbsolute || mType == JoystickFloat)
 			{
-				setBounds(new Rectangle(0, 0, scripts.MyAssets.stageWidth, scripts.MyAssets.stageHeight));
+				setBounds(new Rectangle(0, 0, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
 				hide();
 			}
 		}
