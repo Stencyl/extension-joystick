@@ -196,6 +196,17 @@ class JoystickController
 			}
 		}
 	}
+	
+	public static function reset()
+	{
+		var target = Engine.engine.root;
+		
+		target.removeChild(joystick1);
+		target.removeChild(joystick2);
+		
+		joystick1 = null;
+		joystick2 = null;
+	}
 
 	public static function getDirection(joystick:Int):Float
 	{

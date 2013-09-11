@@ -597,9 +597,9 @@ class Joystick extends Sprite
 
 	//---
 	
-	private function onTouchEnd(e:TouchEvent)
+	public function onTouchEnd(e:TouchEvent)
 	{
-		if(e.touchPointID != mCurTouch)
+		if(e != null && e.touchPointID != mCurTouch)
 		{
 			return;
 		}
