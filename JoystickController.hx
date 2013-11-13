@@ -45,8 +45,15 @@ class JoystickController
 				inner = Assets.getBitmapData("assets/graphics/inner-joystick@4x.png");
 			}
 			
-			joystick1 = createJoystick(target, outer, inner, Joystick.JoystickStatic);
-			joystick2 = createJoystick(target, outer, inner, Joystick.JoystickStatic);
+			if(joystick1 == null)
+			{
+				joystick1 = createJoystick(target, outer, inner, Joystick.JoystickStatic);
+			}
+			
+			if(joystick2 == null)
+			{
+				joystick2 = createJoystick(target, outer, inner, Joystick.JoystickStatic);
+			}
 		}
 	}
 	
@@ -195,14 +202,45 @@ class JoystickController
 				joystick2.hide();
 			}
 		}
+		
+		if(joystick == 1)
+		{
+			var target = Engine.engine.root;
+			
+			if(joystick1 != null)
+			{
+				target.removeChild(joystick1);
+			}
+			
+			joystick1 = null;
+		}
+		
+		if(joystick == 2)
+		{
+			var target = Engine.engine.root;
+			
+			if(joystick2 != null)
+			{
+				target.removeChild(joystick2);
+			}
+			
+			joystick2 = null;
+		}
 	}
 	
 	public static function reset()
 	{
 		var target = Engine.engine.root;
 		
-		target.removeChild(joystick1);
-		target.removeChild(joystick2);
+		if(joystick1 != null)
+		{
+			target.removeChild(joystick1);
+		}
+		
+		else if(joystick2 != null)
+		{
+			target.removeChild(joystick2);
+		}
 		
 		joystick1 = null;
 		joystick2 = null;

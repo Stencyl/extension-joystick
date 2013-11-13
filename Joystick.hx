@@ -38,6 +38,7 @@ class Joystick extends Sprite
 	
 	public var mBounds:Rectangle;
 	public var mRender:Bool;
+	public var enabled:Bool;
 	
 	public var mCurTouch:Int;
 	
@@ -63,6 +64,8 @@ class Joystick extends Sprite
 		
 		mDistance = 0;
 		mDirection = 0;
+		
+		enabled = true;
 	}
 	
 	public function start()
@@ -77,6 +80,9 @@ class Joystick extends Sprite
         Engine.stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
 	
 		mRender = true;
+		
+		mDistance = 0;
+		mDirection = 0;
 	}
 	
 	public function stop()
@@ -91,6 +97,9 @@ class Joystick extends Sprite
         Engine.stage.removeEventListener(TouchEvent.TOUCH_END, onTouchEnd);
 
 		mRender = false;
+		
+		mDistance = 0;
+		mDirection = 0;
 	}
 	
 	//---
@@ -132,13 +141,24 @@ class Joystick extends Sprite
 			
 			if(mType == JoystickStatic || mType == JoystickRelative)
 			{
-				setBounds(null);
+				//setBounds(null);
 				show();
 			}
 			
 			else if(mType == JoystickAbsolute || mType == JoystickFloat)
 			{
 				setBounds(new Rectangle(0, 0, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
+				
+				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
+				
+				//hardcode it to correct vlaue?
+				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
+				
+				/*trace(Engine.engine.root.x);
+				trace(Engine.engine.root.y);
+				trace(scripts.MyAssets.stageWidth * Engine.SCALE);
+				trace(scripts.MyAssets.stageHeight * Engine.SCALE);*/
+				
 				hide();
 			}
 		}
@@ -603,7 +623,7 @@ class Joystick extends Sprite
 		{
 			return;
 		}
-		
+
 		if(mType == JoystickStatic || mType == JoystickRelative)
 		{
 			if(mInnerImage != null) 
