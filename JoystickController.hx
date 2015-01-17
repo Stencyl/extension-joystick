@@ -1,10 +1,10 @@
 package;
 
-import nme.Assets;
+import openfl.Assets;
 import com.stencyl.Engine;
-import nme.display.Sprite;
-import nme.display.Bitmap;
-import nme.display.BitmapData;
+import openfl.display.Sprite;
+import openfl.display.Bitmap;
+import openfl.display.BitmapData;
 
 //LAST PART: Implement the hook between SW and initialize - set the target and the images, type is static
 

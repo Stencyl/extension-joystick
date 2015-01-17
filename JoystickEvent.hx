@@ -1,8 +1,8 @@
 package;
 
 import com.stencyl.Engine;
-import nme.display.Sprite;
-import nme.events.Event;
+import openfl.display.Sprite;
+import openfl.events.Event;
 
 class JoystickEvent extends Event
 {	

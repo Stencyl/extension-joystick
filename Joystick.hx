@@ -2,12 +2,12 @@ package;
 
 import com.stencyl.Engine;
 import com.stencyl.utils.Utils;
-import nme.display.Sprite;
-import nme.display.Bitmap;
-import nme.geom.Rectangle;
-import nme.geom.Point;
-import nme.events.Event;
-import nme.events.TouchEvent;
+import openfl.display.Sprite;
+import openfl.display.Bitmap;
+import openfl.geom.Rectangle;
+import openfl.geom.Point;
+import openfl.events.Event;
+import openfl.events.TouchEvent;
 
 //Ported and adapted from
 //http://wiki.sparrow-framework.org/users/shilo/extensions/shthumbstick
