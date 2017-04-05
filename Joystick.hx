@@ -1,5 +1,6 @@
 package;
 
+import com.stencyl.Config;
 import com.stencyl.Engine;
 import com.stencyl.utils.Utils;
 import openfl.display.Sprite;
@@ -147,17 +148,17 @@ class Joystick extends Sprite
 			
 			else if(mType == JoystickAbsolute || mType == JoystickFloat)
 			{
-				setBounds(new Rectangle(0, 0, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
+				setBounds(new Rectangle(0, 0, Config.stageWidth * Engine.SCALE, Config.stageHeight * Engine.SCALE));
 				
-				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
+				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, Config.stageWidth * Engine.SCALE, Config.stageHeight * Engine.SCALE));
 				
 				//hardcode it to correct vlaue?
-				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, scripts.MyAssets.stageWidth * Engine.SCALE, scripts.MyAssets.stageHeight * Engine.SCALE));
+				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, Config.stageWidth * Engine.SCALE, Config.stageHeight * Engine.SCALE));
 				
 				/*trace(Engine.engine.root.x);
 				trace(Engine.engine.root.y);
-				trace(scripts.MyAssets.stageWidth * Engine.SCALE);
-				trace(scripts.MyAssets.stageHeight * Engine.SCALE);*/
+				trace(Config.stageWidth * Engine.SCALE);
+				trace(Config.stageHeight * Engine.SCALE);*/
 				
 				hide();
 			}
