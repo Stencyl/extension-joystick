@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<palette>
+    
+    <!-- Core blocks -->
+    
+    <block tag="joystick-add-static"
+           code="Joystick.addJoystick(~, ~, ~, 0, 0, 0, 0, 0, false);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <number order="1"></number>
+            <number order="2"></number>
+        </fields>
+    </block>
+    
+    <block tag="joystick-add-relative"
+           code="Joystick.addJoystick(~, ~, ~, 1, ~, ~, ~, ~, false);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <number order="1"></number>
+            <number order="2"></number>
+            <number order="3"></number>
+            <number order="4"></number>
+            <number order="5"></number>
+            <number order="6"></number>
+        </fields>
+    </block>
+    
+    <block tag="joystick-remove"
+           code="Joystick.removeJoystick(~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+        </fields>
+    </block>
+    
+    <!-- Setter blocks -->
+    
+    <block tag="joystick-set-default-direction"
+           code="Joystick.setDefaultDirection(~, ~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <number order="1"></number>
+        </fields>
+    </block>
+    
+    <block tag="joystick-set-center"
+           code="Joystick.setJoystickCenter(~, ~, ~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <number order="1"></number>
+            <number order="2"></number>
+        </fields>
+    </block>
+    
+    <block tag="joystick-set-radius"
+           code="Joystick.setJoystickRadius(~, ~, ~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@outer" code="true"></c>
+                <c text="@inner" code="false"></c>
+              </choices>
+            </dropdown>
+            <number order="2"></number>
+        </fields>
+    </block>
+    
+    <block tag="joystick-set-region"
+           code="Joystick.setTouchRegionForRJ(~, ~, ~, ~, ~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <number order="1"></number>
+            <number order="2"></number>
+            <number order="3"></number>
+            <number order="4"></number>
+        </fields>
+    </block>
+    
+    <block tag="joystick-set-image"
+           code="Joystick.setJoystickImage(~, ~, ~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@outer" code="true"></c>
+                <c text="@inner" code="false"></c>
+              </choices>
+            </dropdown>
+            <text order="2"></text>
+        </fields>
+    </block>
+    
+    <block tag="joystick-set-alpha"
+           code="Joystick.setJoystickAlpha(~, ~, ~, ~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@outer" code="true"></c>
+                <c text="@inner" code="false"></c>
+              </choices>
+            </dropdown>
+            <number order="2"></number>
+            <dropdown order="3">
+              <choices>
+                <c text="@released" code="true"></c>
+                <c text="@pressed" code="false"></c>
+              </choices>
+            </dropdown>
+        </fields>
+    </block>
+    
+    <block tag="joystick-set-always-hide"
+           code="Joystick.alwaysHideRJ(~);"
+           type="action"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+        </fields>
+    </block>
+    
+    <!-- Getter blocks-->
+    
+    <block tag="joystick-is-pressed"
+           code="Joystick.isJoystickPressed(~)"
+           type="normal"
+           color="gray"
+           returns="boolean"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+        </fields>
+    </block>
+    
+    <block tag="joystick-get-distance-direction"
+           code="Joystick.getJoystickDisDir(~, ~)"
+           type="normal"
+           returns="number"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@direction" code="false"></c>
+                <c text="@distance" code="true"></c>
+              </choices>
+            </dropdown>
+        </fields>
+    </block>
+    
+    <block tag="joystick-get-center"
+           code="Joystick.getJoystickCenter(~, ~)"
+           type="normal"
+           returns="number"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@x-center" code="true"></c>
+                <c text="@y-center" code="false"></c>
+              </choices>
+            </dropdown>
+        </fields>
+    </block>
+    
+    <block tag="joystick-get-radius"
+           code="Joystick.getJoystickRadius(~, ~)"
+           type="normal"
+           returns="number"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@outer" code="true"></c>
+                <c text="@inner" code="false"></c>
+              </choices>
+            </dropdown>
+        </fields>
+    </block>
+    
+    <block tag="joystick-get-touch-region-property"
+           code="Joystick.getTouchRegionPropertyForRJ(~, ~)"
+           type="normal"
+           returns="void"
+           category="input"
+           helpURL="input-joystick">
+        <fields>
+            <int order="0"></int>
+            <dropdown order="1">
+              <choices>
+                <c text="@x" code="1"></c>
+                <c text="@y" code="2"></c>
+                <c text="@width" code="3"></c>
+                <c text="@height" code="4"></c>
+              </choices>
+            </dropdown>
+        </fields>
+    </block>
+    
+</palette>
