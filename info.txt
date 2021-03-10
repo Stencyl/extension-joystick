@@ -1,3 +1,4 @@
+id=com.stencyl.joystick
 name=Joystick Extension
 description=Onscreen joysticks for touch input on mobile devices
 author=Jon
