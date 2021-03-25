@@ -1,4 +1,4 @@
-package;
+package com.stencyl.joystick;
 
 import com.stencyl.Engine;
 import openfl.display.Sprite;

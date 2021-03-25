@@ -1,4 +1,4 @@
-package;
+package com.stencyl.joystick;
 
 import com.stencyl.Config;
 import com.stencyl.Engine;

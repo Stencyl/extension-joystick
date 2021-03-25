@@ -1,4 +1,4 @@
-package;
+package com.stencyl.joystick;
 
 import openfl.Assets;
 import com.stencyl.Engine;
