@@ -1,646 +1,594 @@
 package com.stencyl.joystick;
 
-import com.stencyl.Config;
 import com.stencyl.Engine;
-import com.stencyl.utils.Utils;
+import com.stencyl.utils.Assets;
+
 import openfl.display.Sprite;
 import openfl.display.Bitmap;
+import openfl.display.BitmapData;
 import openfl.geom.Rectangle;
 import openfl.geom.Point;
 import openfl.events.Event;
 import openfl.events.TouchEvent;
+import openfl.events.MouseEvent;
 
-//Ported and adapted from
-//http://wiki.sparrow-framework.org/users/shilo/extensions/shthumbstick
+import flash.ui.Multitouch;
+import flash.ui.MultitouchInputMode;
 
 class Joystick extends Sprite
 {
-	public static var EVENT_TOUCH:String = "thumbstickTouch";
-	public static var EVENT_MOVE:String = "thumbstickMove";
-	public static var EVENT_TOUCHUP:String = "thumbstickTouchUp";
-	public static var EVENT_CHANGED:String = "thumbstickChanged";
+    public static var joystickMap:Map<Int, Joystick>;
+    
+    private static var staticsInit = false;
+    public static function resetStatics():Void
+    {
+        joystickMap = null;
+        fixedCenter = 0;
+        showWherePressed = 1;
+        viewOffsetX = viewOffsetY = 0;
+        initialized = false;
+    }
 
-	public static var DEFAULT_TOUCHRADIUS:Float = 50.0;
-	public static var DEFAULT_OUTERRADIUS:Float = 50.0;
-	public static var DEFAULT_INNERRADIUS:Float = 25.0;
-	
-	public static var JoystickStatic:Int = 0;
-    public static var JoystickRelative:Int = 1;
-    public static var JoystickAbsolute:Int = 2;
-    public static var JoystickFloat:Int = 3;
+    public var center:Point;
+    public var outerRadius:Float;
+    public var innerRadius:Float;
+    public var joystickBounds:Rectangle;
+    
+    private var joystickTouchID: Int;
 
-	public var mOuterImage:Bitmap;
-	public var mInnerImage:Bitmap;
+    public var id:Int;
+    public var joystickDistance:Float = 0;
+    public var joystickDirection:Float = 0;
+    public var joystickDefaultDirection:Float = 0;
 
-	public var mType:Int;
-	public var mTouchRadius:Float;
-	public var mOuterRadius:Float;
-	public var mInnerRadius:Float;
-	
-	public var mBounds:Rectangle;
-	public var mRender:Bool;
-	public var enabled:Bool;
-	
-	public var mCurTouch:Int;
-	
-	public var mRelativeX:Float;
-	public var mRelativeY:Float;
-	
-	public var mInnerImageScaleOnTouch:Float;
-	
-	public var mDistance:Float;
-	public var mDirection:Float;
-	
-	public function new() 
-	{
-		super();
-		
-		mRender = false;
-		mType = JoystickStatic;
-		mTouchRadius = DEFAULT_TOUCHRADIUS;
-		mOuterRadius = DEFAULT_OUTERRADIUS;
-		mInnerRadius = DEFAULT_INNERRADIUS;
-		mBounds = null;
-		mInnerImageScaleOnTouch = 1.0;
-		
-		mDistance = 0;
-		mDirection = 0;
-		
-		enabled = true;
-	}
-	
-	public function start()
-	{
-		if(mRender) 
-		{
-			return;
-		}
-		
-		Engine.stage.addEventListener(TouchEvent.TOUCH_BEGIN, onTouchBegin);
-	    Engine.stage.addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
-        Engine.stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
-	
-		mRender = true;
-		
-		mDistance = 0;
-		mDirection = 0;
-	}
-	
-	public function stop()
-	{
-		if(!mRender) 
-		{
-			return;
-		}
-		
-		Engine.stage.removeEventListener(TouchEvent.TOUCH_BEGIN, onTouchBegin);
-	    Engine.stage.removeEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
-        Engine.stage.removeEventListener(TouchEvent.TOUCH_END, onTouchEnd);
+    public var joystickType:Int = 0;
+    public static var fixedCenter:Int = 0;
+    public static var showWherePressed:Int = 1;
+    public var hideWhenReleased:Bool = false;
+    
+    public var outerImage:Bitmap = null;
+	public var innerImage:Bitmap = null;
+    
+    public var outerAlphaWhenReleased:Float = 1;
+    public var outerAlphaWhenPressed:Float = 1;
+    public var innerAlphaWhenReleased:Float = 1;
+    public var innerAlphaWhenPressed:Float = 1;
+    
+    public var isPressed:Bool = false;
+    
+    private static var viewOffsetX:Int = 0;
+    private static var viewOffsetY:Int = 0;
+    private static var initialized:Bool = false;
 
-		mRender = false;
-		
-		mDistance = 0;
-		mDirection = 0;
-	}
-	
-	//---
-	
-	public function setOuterImage(outerImage:Bitmap)
-	{
-		if(mOuterImage != null) 
-		{
-			removeChild(mOuterImage);
-		}
-		
-		mOuterImage = outerImage;
-		addChild(mOuterImage);
-		setChildIndex(mOuterImage, 0);
+    private function start()
+    {
+        if(!staticsInit)
+        {
+            staticsInit = true;
+            Universal.addReloadListener(resetStatics);
+        }
+        if(!initialized)
+        {
+            initialized = true;
 
-		mOuterRadius = (mOuterImage.width > mOuterImage.height) ? mOuterImage.width/2 : mOuterImage.height/2;
-		positionContent();
-	}
-	
-	public function setInnerImage(innerImage:Bitmap)
-	{
-		if(mInnerImage != null) 
-		{
-			removeChild(mInnerImage);
-		}
-		
-		mInnerImage = innerImage;
-		addChild(mInnerImage);
-	
-		mInnerRadius = (mInnerImage.width > mInnerImage.height) ? mInnerImage.width/2 : mInnerImage.height/2;
-		positionContent();
-	}
-	
-	public function setType(type:Int)
-	{
-		if(type != mType) 
-		{
-			mType = type;
-			
-			if(mType == JoystickStatic || mType == JoystickRelative)
-			{
-				//setBounds(null);
-				show();
-			}
-			
-			else if(mType == JoystickAbsolute || mType == JoystickFloat)
-			{
-				setBounds(new Rectangle(0, 0, Config.stageWidth * Engine.SCALE, Config.stageHeight * Engine.SCALE));
-				
-				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, Config.stageWidth * Engine.SCALE, Config.stageHeight * Engine.SCALE));
-				
-				//hardcode it to correct vlaue?
-				setBounds(new Rectangle(Engine.engine.root.x, Engine.engine.root.y, Config.stageWidth * Engine.SCALE, Config.stageHeight * Engine.SCALE));
-				
-				/*trace(Engine.engine.root.x);
-				trace(Engine.engine.root.y);
-				trace(Config.stageWidth * Engine.SCALE);
-				trace(Config.stageHeight * Engine.SCALE);*/
-				
-				hide();
-			}
-		}
-	}
-	
-	public function setTouchRadius(touchRadius:Float)
-	{
-		if(touchRadius != mTouchRadius) 
-		{
-			mTouchRadius = touchRadius;
-		}
-	}
-	
-	public function setOuterRadius(outerRadius:Float)
-	{
-		if(outerRadius != mOuterRadius) 
-		{
-			mOuterRadius = outerRadius;
-		}
-	}
-	
-	public function setInnerRadius(innerRadius:Float)
-	{
-		if(innerRadius != mInnerRadius) 
-		{
-			mInnerRadius = innerRadius;
-		}
-	}
-	
-	public function setBounds(bounds:Rectangle)
-	{
-		mBounds = bounds;
-	}
-	
-	public function positionContent()
-	{
-		var outerRadius:Float = (mOuterRadius > mOuterImage.width/2) ? (mOuterRadius > mOuterImage.height/2) ? mOuterRadius : mOuterImage.height/2 : mOuterImage.width/2;
+            joystickMap = new Map();
+            
+            viewOffsetX = (Engine.screenOffsetX);
+            viewOffsetY = (Engine.screenOffsetY);
+        }
+        
+        if (Multitouch.supportsTouchEvents)
+        {
+            Engine.stage.addEventListener(TouchEvent.TOUCH_BEGIN, onTouchBegin);
+            Engine.stage.addEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
+            Engine.stage.addEventListener(TouchEvent.TOUCH_END, onTouchEnd);
 
-		if(mOuterImage != null) 
-		{
-			mOuterImage.x = outerRadius - mOuterImage.width/2;
-			mOuterImage.y = outerRadius - mOuterImage.height/2;
-		}
-		
-		if(mInnerImage != null)
-		{
-			mInnerImage.x = outerRadius - mInnerImage.width/2;
-			mInnerImage.y = outerRadius - mInnerImage.height/2;
-		}
-	}
-	
-	public function getWidth():Float
+            Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+        }
+
+        else
+        {
+            Engine.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+            Engine.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+            Engine.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+        }
+    }
+
+    private function stop()
 	{
-		if(mOuterRadius * 2 > mOuterImage.width)
+		if (Multitouch.supportsTouchEvents)
 		{
-			return mOuterRadius * 2;
+			Engine.stage.removeEventListener(TouchEvent.TOUCH_BEGIN, onTouchBegin);
+			Engine.stage.removeEventListener(TouchEvent.TOUCH_MOVE, onTouchMove);
+			Engine.stage.removeEventListener(TouchEvent.TOUCH_END, onTouchEnd);
 		}
-		
+
 		else
 		{
-			return mOuterImage.width;
+			Engine.stage.removeEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
+			Engine.stage.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			Engine.stage.removeEventListener(MouseEvent.MOUSE_UP, onMouseUp);
 		}
-	}
-	
-	public function getHeight():Float
-	{
-		if(mOuterRadius * 2 > mOuterImage.height) 
-		{
-			return mOuterRadius * 2;
-		} 
-		
-		else 
-		{
-			return mOuterImage.height;
-		}
-	}
-	
-	public function getCenterX():Float
-	{
-		return x + getWidth()/2;
-	}
-	
-	public function getCenterY():Float
-	{
-		return y + getHeight()/2;
-	}
-	
-	public function setCenterX(centerX:Float)
-	{
-		x = centerX - getWidth()/2;
-	}
-	
-	public function setCenterY(centerY:Float)
-	{
-		y = centerY - getHeight()/2;
-	}
-	
-	public function show()
-	{
-		if(mInnerImage != null)
-		{
-			mInnerImage.visible = true;
-		}
-		
-		if(mOuterImage != null)
-		{
-			mOuterImage.visible = true;
-		}
-	}
-	
-	public function hide()
-	{
-		if(mInnerImage != null)
-		{
-			mInnerImage.visible = false;
-		}
-		
-		if(mOuterImage != null)
-		{
-			mOuterImage.visible = false;
-		}
-		
-		if(mType == JoystickAbsolute || mType == JoystickFloat)
-		{	
-			x = 0;
-			y = 0;
-		}
-	}
-	
-	public function isWithinBounds(point:Point):Bool
-	{
-		if(point.x < mBounds.x || point.x > mBounds.x + mBounds.width || point.y < mBounds.y || point.y > mBounds.y + mBounds.height) 
-		{
-			return false;
-		} 
-		
-		else 
-		{
-			return true;
-		}
-	}
-	
-	public function sendEvent(type:String, distance:Float, direction:Float)
-	{
-		if(direction < 0)
-		{
-			direction += 360;
-		}
-		
-		mDistance = distance;
-		mDirection = direction;
-		
-		//I rather just do polling.
-		//dispatchEvent(new JoystickEvent(type, distance, direction));
-		//dispatchEvent(new JoystickEvent(EVENT_CHANGED, distance, direction));
-	}
-	
-	//---
-	
-	private function onTouchBegin(e:TouchEvent)
-	{
-		if(mType == JoystickStatic)
-		{
-			onStaticTouch(e);
-		}
-		
-		else if(mType == JoystickRelative)
-		{
-			onRelativeTouch(e);
-		}
-		
-		else if(mType == JoystickAbsolute)
-		{
-			onAbsoluteTouch(e);
-		}
-		
-		else if(mType == JoystickFloat)
-		{
-			onAbsoluteTouch(e);
-		}
-	}
-	
-	private function onStaticTouch(e:TouchEvent)
-	{
-		var touchPosition = new Point(e.stageX - x, e.stageY - y);
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		var distance:Float = Math.sqrt(Math.pow(Math.abs(touchPosition.x - centerX), 2) + Math.pow(Math.abs(touchPosition.y - centerY), 2));
-		
-		if(distance > mTouchRadius) 
-		{
-			return;
-		}
-	
-		mCurTouch = e.touchPointID;
-		
-		var radians:Float = Math.atan2(centerX - touchPosition.x, centerY - touchPosition.y);
-		
-		if(distance > mOuterRadius - mInnerRadius) 
-		{
-			distance = mOuterRadius - mInnerRadius;	
-			
-			if(mInnerImage != null) 
-			{
-				mInnerImage.scaleX = mInnerImage.scaleY = mInnerImageScaleOnTouch;
-				mInnerImage.x = (centerX - mInnerImage.width/2) - Math.sin(radians) * (mOuterRadius - mInnerRadius);
-				mInnerImage.y = (centerY - mInnerImage.height/2) - Math.cos(radians) * (mOuterRadius - mInnerRadius);
-			}
-		} 
-		
-		else 
-		{
-			if(mInnerImage != null) 
-			{
-				mInnerImage.scaleX = mInnerImage.scaleY = mInnerImageScaleOnTouch;
-				mInnerImage.x = touchPosition.x - (mInnerImage.width/2);
-				mInnerImage.y = touchPosition.y - (mInnerImage.height/2);
-			}
-		}
-		
-		sendEvent(EVENT_TOUCH, distance / (mOuterRadius - mInnerRadius), Utils.DEG * -radians);
-	}
-	
-	private function onRelativeTouch(e:TouchEvent)
-	{
-		var touchPosition = new Point(e.stageX - x, e.stageY - y);
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		var distance:Float = Math.sqrt(Math.pow(Math.abs(touchPosition.x - centerX), 2) + Math.pow(Math.abs(touchPosition.y - centerY), 2));
-		
-		if(distance > mTouchRadius) 
-		{
-			return;
-		}
-		
-		mCurTouch = e.touchPointID;
-		
-		mRelativeX = touchPosition.x;
-		mRelativeY = touchPosition.y;
-		
-		if(mInnerImage != null) 
-		{
-			mInnerImage.scaleX = mInnerImage.scaleY = mInnerImageScaleOnTouch;
-			mInnerImage.x = centerX - mInnerImage.width / 2;
-			mInnerImage.y = centerY - mInnerImage.height / 2;
-		}
-		
-		sendEvent(EVENT_TOUCH, 0, 0);
-	}
-	
-	private function onAbsoluteTouch(e:TouchEvent)
-	{
-		var touchPosition = new Point(e.stageX - x, e.stageY - y);
-		
-		if(!isWithinBounds(touchPosition)) 
-		{
-			return;
-		}
-		
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		
-		mCurTouch = e.touchPointID;
-		
-		if(mInnerImage != null) 
-		{
-			mInnerImage.scaleX = mInnerImage.scaleY = mInnerImageScaleOnTouch;
-			mInnerImage.x = centerX - mInnerImage.width / 2;
-			mInnerImage.y = centerY - mInnerImage.height / 2;
-		}
-		
-		setCenterX(touchPosition.x);
-		setCenterY(touchPosition.y);
 
-		show();
-		sendEvent(EVENT_TOUCH, 0, 0);
+		joystickMap = null;
 	}
-	
-	//---
-	
+    
+    private function onTouchBegin(e:TouchEvent)
+	{
+		onBegin(e.stageX, e.stageY, e.touchPointID);
+	}
+
 	private function onTouchMove(e:TouchEvent)
 	{
-		if(e.touchPointID != mCurTouch)
-		{
-			return;
-		}
-		
-		if(mType == JoystickStatic)
-		{
-			onStaticMove(e);
-		}
-		
-		else if(mType == JoystickRelative)
-		{
-			onRelativeMove(e);
-		}
-		
-		else if(mType == JoystickAbsolute)
-		{
-			onAbsoluteMove(e);
-		}
-		
-		else if(mType == JoystickFloat)
-		{
-			onFloatMove(e);
-		}
-	}
-	
-	private function onStaticMove(e:TouchEvent)
-	{
-		var movePosition = new Point(e.stageX - x, e.stageY - y);
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		var distance:Float = Math.sqrt(Math.pow(Math.abs(movePosition.x - centerX), 2) + Math.pow(Math.abs(movePosition.y - centerY), 2));
-		var radians:Float = Math.atan2(centerX - movePosition.x, centerY - movePosition.y);
-		
-		if(distance > mOuterRadius - mInnerRadius) 
-		{
-			distance = mOuterRadius - mInnerRadius;
-			
-			if(mInnerImage != null)
-			{
-				mInnerImage.x = (centerX - mInnerImage.width/2) - Math.sin(radians) * (mOuterRadius - mInnerRadius);
-				mInnerImage.y = (centerY - mInnerImage.height/2) - Math.cos(radians) * (mOuterRadius - mInnerRadius);
-			}
-		} 
-		
-		else 
-		{
-			if(mInnerImage != null) 
-			{
-				mInnerImage.x = movePosition.x - (mInnerImage.width / 2);
-				mInnerImage.y = movePosition.y - (mInnerImage.height / 2);
-			}
-		}
-		
-		sendEvent(EVENT_MOVE, distance / (mOuterRadius - mInnerRadius), Utils.DEG * -radians);
-	}
-	
-	private function onRelativeMove(e:TouchEvent)
-	{
-		var movePosition = new Point(e.stageX - x, e.stageY - y);
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		var distance:Float = Math.sqrt(Math.pow(Math.abs(movePosition.x - mRelativeX), 2) + Math.pow(Math.abs(movePosition.y - mRelativeY), 2));
-		var radians:Float = Math.atan2(mRelativeX - movePosition.x, mRelativeY - movePosition.y);
-		
-		if(distance > mOuterRadius - mInnerRadius)
-		{
-			distance = mOuterRadius-mInnerRadius;
-			
-			if(mInnerImage != null) 
-			{
-				mInnerImage.x = (centerX - mInnerImage.width/2) - Math.sin(radians) * (mOuterRadius - mInnerRadius);
-				mInnerImage.y = (centerY - mInnerImage.height/2) - Math.cos(radians) * (mOuterRadius - mInnerRadius);
-			}
-		} 
-		
-		else 
-		{
-			if(mInnerImage != null) 
-			{
-				mInnerImage.x = movePosition.x - mRelativeX - (mInnerImage.width / 2) + centerX;
-				mInnerImage.y = movePosition.y - mRelativeY - (mInnerImage.height / 2) + centerY;
-			}
-		}
-		
-		sendEvent(EVENT_MOVE, distance / (mOuterRadius - mInnerRadius), Utils.DEG * -radians);
-	}
-	
-	private function onAbsoluteMove(e:TouchEvent)
-	{
-		var movePosition = new Point(e.stageX - x, e.stageY - y);
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		var distance:Float = Math.sqrt(Math.pow(Math.abs(movePosition.x - centerX), 2) + Math.pow(Math.abs(movePosition.y - centerY), 2));
-		var radians:Float = Math.atan2(centerX - movePosition.x, centerY - movePosition.y);
-		
-		if(distance > mOuterRadius - mInnerRadius) 
-		{
-			distance = mOuterRadius - mInnerRadius;
-			
-			if(mInnerImage != null)
-			{
-				mInnerImage.x = (centerX - mInnerImage.width/2) - Math.sin(radians) * (mOuterRadius - mInnerRadius);
-				mInnerImage.y = (centerY - mInnerImage.height/2) - Math.cos(radians) * (mOuterRadius - mInnerRadius);
-			}
-		} 
-		
-		else 
-		{
-			if(mInnerImage != null) 
-			{
-				mInnerImage.x = movePosition.x - (mInnerImage.width / 2);
-				mInnerImage.y = movePosition.y - (mInnerImage.height / 2);
-			}
-		}
-		
-		sendEvent(EVENT_MOVE, distance / (mOuterRadius - mInnerRadius), Utils.DEG * -radians);
-	}
-	
-	private function onFloatMove(e:TouchEvent)
-	{
-		var movePosition = new Point(e.stageX - x, e.stageY - y);
-		var centerX:Float = getWidth() / 2;
-		var centerY:Float = getHeight() / 2;
-		var distance:Float = Math.sqrt(Math.pow(Math.abs(movePosition.x - centerX), 2) + Math.pow(Math.abs(movePosition.y - centerY), 2));
-		var radians:Float = Math.atan2(centerX - movePosition.x, centerY - movePosition.y);
-		
-		if(distance > mOuterRadius - mInnerRadius) 
-		{
-			distance = mOuterRadius - mInnerRadius;
-			
-			var touchPosition = new Point(e.stageX - parent.x, e.stageY - parent.y);
-			setCenterX(touchPosition.x + Math.sin(radians) * (mOuterRadius - mInnerRadius));
-			setCenterY(touchPosition.y + Math.cos(radians) * (mOuterRadius - mInnerRadius));
-			
-			if(getCenterX() < mBounds.x) 
-			{
-				setCenterX(mBounds.x);
-			}
-			
-			else if(getCenterX() > mBounds.x + mBounds.width) 
-			{
-				setCenterX(mBounds.x + mBounds.width);
-			}
-			
-			if(getCenterY() < mBounds.y) 
-			{
-				setCenterY(mBounds.y);
-			}
-			
-			else if(getCenterY() > mBounds.y + mBounds.height) 
-			{
-				setCenterY(mBounds.y + mBounds.height);
-			}
-			
-			if(mInnerImage != null) 
-			{
-				mInnerImage.x = (centerX - mInnerImage.width / 2) - Math.sin(radians) * (mOuterRadius - mInnerRadius);
-				mInnerImage.y = (centerY - mInnerImage.height / 2) - Math.cos(radians) * (mOuterRadius - mInnerRadius);
-			}
-		} 
-		
-		else 
-		{
-			if(mInnerImage != null) 
-			{
-				mInnerImage.x = movePosition.x - (mInnerImage.width / 2);
-				mInnerImage.y = movePosition.y - (mInnerImage.height / 2);
-			}
-		}
-		
-		sendEvent(EVENT_MOVE, distance / (mOuterRadius - mInnerRadius), Utils.DEG * -radians);
+		onMove(e.stageX, e.stageY, e.touchPointID);
 	}
 
-	//---
-	
-	public function onTouchEnd(e:TouchEvent)
+	private function onTouchEnd(e:TouchEvent)
 	{
-		if(e != null && e.touchPointID != mCurTouch)
+		onEnd(e.stageX, e.stageY, e.touchPointID);
+	}
+
+	private function onMouseDown(e:MouseEvent)
+	{
+		onBegin(e.stageX, e.stageY, 0);
+	}
+
+	private function onMouseMove(e:MouseEvent)
+	{
+		onMove(e.stageX, e.stageY, 0);
+	}
+
+	private function onMouseUp(e:MouseEvent)
+	{
+		onEnd(e.stageX, e.stageY, 0);
+	}
+
+    private function onBegin(x:Float, y:Float, currentTouch:Int)
+	{
+        if(joystickTouchID != -1)
+        {
+            return;
+        }
+        
+        x /= Engine.screenScaleX;
+        y /= Engine.screenScaleY;
+        
+        outerImage.alpha = outerAlphaWhenPressed;
+        innerImage.alpha = innerAlphaWhenPressed;
+
+        if(joystickType == fixedCenter)
+        {
+            var distance = Math.sqrt(Math.pow((center.x + viewOffsetX - x), 2) + Math.pow((center.y + viewOffsetY - y), 2));
+            var radians = Math.atan2(center.y + viewOffsetY - y, center.x + viewOffsetX - x);
+            
+            if(distance > outerRadius)
+            {
+                return;
+            }
+            
+            else if(distance > outerRadius - innerRadius)
+            {
+                distance = outerRadius - innerRadius;
+                innerImage.x = center.x - Math.cos(radians) * (outerRadius - innerRadius) - innerImage.width * 0.5;
+                innerImage.y = center.y - Math.sin(radians) * (outerRadius - innerRadius) - innerImage.height * 0.5;
+            }
+            
+            else
+            {
+                innerImage.x = x - viewOffsetX - innerImage.width * 0.5;
+                innerImage.y = y - viewOffsetY - innerImage.height * 0.5;
+            }
+			
+			isPressed = true;
+            
+            joystickTouchID = currentTouch;
+            joystickDistance = distance / (outerRadius - innerRadius);
+            joystickDirection = radians * 180 / 3.1415926535 + 180;
+        }
+
+        else if(joystickType == showWherePressed)
+        {
+            if(x < joystickBounds.x || x > joystickBounds.x + joystickBounds.width || y < joystickBounds.y || y > joystickBounds.y + joystickBounds.height)
+            {
+                return;
+            }
+			
+			isPressed = true;
+            
+            center.x = x - viewOffsetX;
+            center.y = y - viewOffsetY;
+            
+            outerImage.x = center.x - outerImage.width * 0.5;
+            outerImage.y = center.y - outerImage.height * 0.5;
+            innerImage.x = center.x - innerImage.width * 0.5;
+            innerImage.y = center.y - innerImage.height * 0.5;
+            
+            if(hideWhenReleased)
+            {
+                outerImage.visible = true;
+                innerImage.visible = true;
+            }
+
+            joystickTouchID = currentTouch;
+        }
+	}
+    
+    private function onMove(x:Float, y:Float, currentTouch:Int)
+	{
+        if(currentTouch != joystickTouchID)
+        {
+            return;
+        }
+        
+        x /= Engine.screenScaleX;
+        y /= Engine.screenScaleY;
+        
+        var distance = Math.sqrt(Math.pow((center.x + viewOffsetX - x), 2) + Math.pow((center.y + viewOffsetY - y), 2));
+        var radians = Math.atan2(center.y + viewOffsetY - y, center.x + viewOffsetX - x);
+        
+        if(distance > (outerRadius - innerRadius))
+        {
+            distance = (outerRadius - innerRadius);
+            innerImage.x = center.x - Math.cos(radians) * (outerRadius - innerRadius) - innerImage.width * 0.5;
+            innerImage.y = center.y - Math.sin(radians) * (outerRadius - innerRadius) - innerImage.height * 0.5;
+        }
+        
+        else
+        {
+            innerImage.x = x - viewOffsetX - innerImage.width * 0.5;
+            innerImage.y = y - viewOffsetY - innerImage.height * 0.5;
+        }
+        
+        joystickDistance = distance / (outerRadius - innerRadius);
+        joystickDirection = radians * 180 / 3.1415926535 + 180;
+	}
+    
+    private function onEnd(x:Float, y:Float, currentTouch:Int)
+	{
+        if(currentTouch != joystickTouchID)
+        {
+            return;
+        }
+        
+        joystickTouchID = -1;
+		
+        isPressed = false;
+        
+        outerImage.alpha = outerAlphaWhenReleased;
+        innerImage.alpha = innerAlphaWhenReleased;
+
+        center.x = outerImage.x + outerRadius;
+        center.y = outerImage.y + outerRadius;
+        
+        innerImage.x = center.x - innerImage.width * 0.5;
+        innerImage.y = center.y - innerImage.height * 0.5;
+
+        if(hideWhenReleased)
+        {
+            outerImage.visible = false;
+            innerImage.visible = false;
+        }
+		
+		joystickDistance = 0;
+        joystickDirection = joystickDefaultDirection;
+		
+	}
+    
+    // --- Add/Remove Joystick functions
+    
+    public static function addJoystick(id:Int, x:Float, y:Float, type:Int = 0, boundsX:Float = 0, boundsY:Float = 0, boundsWidth:Float = 0, boundsHeight:Float = 0, hide:Bool = false)
+    {
+        if (joystickMap != null && joystickMap.exists(id))
+        {
+            removeJoystick(id);
+        }
+        
+        var joystick = Type.createEmptyInstance(Joystick);
+        
+        joystick.start();
+
+        joystick.id = id;
+        joystick.joystickTouchID = -1;
+        joystick.joystickDistance = 0;
+        joystick.joystickDirection = 0;
+		joystick.joystickDefaultDirection = 0;
+        joystick.joystickType = type;
+
+        joystick.center = new Point(x * Engine.SCALE, y * Engine.SCALE);
+
+        joystickMap.set(id, joystick);
+        
+        setJoystickImage(id, true, "outer-joystick");
+        setJoystickImage(id, false, "inner-joystick");
+        
+        joystick.outerAlphaWhenPressed = 1;
+        joystick.outerAlphaWhenReleased = 1;
+        joystick.innerAlphaWhenPressed = 1;
+        joystick.innerAlphaWhenReleased = 1;
+        
+        if(joystick.joystickType == showWherePressed)
+        {
+            joystick.joystickBounds = new Rectangle(boundsX * Engine.SCALE + viewOffsetX, boundsY * Engine.SCALE + viewOffsetY, boundsWidth * Engine.SCALE, boundsHeight * Engine.SCALE);
+        }
+        
+        if(hide)
+        {
+            joystick.hideWhenReleased = true;
+            joystick.outerImage.visible = false;
+            joystick.innerImage.visible = false;
+        }
+    }
+    
+    public static function removeJoystick(id:Int)
+    {
+        if (joystickMap.exists(id))
 		{
-			return;
+			var joystick = joystickMap.get(id);
+            var target = Engine.engine.root;
+            
+            joystickMap.remove(id);
+            
+            target.removeChild(joystick.outerImage);
+            target.removeChild(joystick.innerImage);
+            
+            joystick = null;
+		}
+    }
+    
+    /// --- Get Distance and Direction of Joystick
+
+    public static function getJoystickDisDir(id:Int, distance:Bool = true):Float
+    {
+        var disdir:Float = 0;
+
+        if (joystickMap.exists(id))
+		{
+			var joystick = joystickMap.get(id);
+            
+            disdir = (distance) ? joystick.joystickDistance : joystick.joystickDirection;
 		}
 
-		if(mType == JoystickStatic || mType == JoystickRelative)
+        return disdir;
+    }
+    
+    /// --- Set/Get Center of Joystick
+    
+    public static function setJoystickCenter(id:Int, x:Float, y:Float)
+    {
+        if (joystickMap.exists(id))
 		{
-			if(mInnerImage != null) 
-			{
-				mInnerImage.scaleX = mInnerImage.scaleY = 1.0;
-				mInnerImage.x = (getWidth() - mInnerImage.width) / 2;
-				mInnerImage.y = (getHeight() - mInnerImage.height) / 2;
-			}
+			var joystick = joystickMap.get(id);
+            
+            joystick.center = new Point(x * Engine.SCALE, y * Engine.SCALE);
+
+            joystick.outerImage.x = joystick.center.x - joystick.outerImage.width * 0.5;
+            joystick.outerImage.y = joystick.center.y - joystick.outerImage.height * 0.5;
+            joystick.innerImage.x = joystick.center.x - joystick.innerImage.width * 0.5;
+            joystick.innerImage.y = joystick.center.y - joystick.innerImage.height * 0.5;
 		}
-		
-		else if(mType == JoystickAbsolute || mType == JoystickFloat)
+    }
+    
+    public static function getJoystickCenter(id:Int, x:Bool = true):Float
+    {
+        var centerXY:Float = 0;
+        
+        if (joystickMap.exists(id))
 		{
-			hide();
+			var joystick = joystickMap.get(id);
+            
+            centerXY = ((x) ? joystick.center.x : joystick.center.y) / Engine.SCALE;
 		}
-		
-		mCurTouch = -1;
-		sendEvent(EVENT_TOUCHUP, 0, 0);
-	}
+        
+        return centerXY;
+    }
+    
+    /// --- Set/Get Inner/Outer Radius of Jostick
+    
+    public static function setJoystickRadius(id:Int, outer:Bool = true, radius:Float)
+    {
+        if (joystickMap.exists(id))
+		{
+			var joystick = joystickMap.get(id);
+            
+            if(outer && joystick.outerRadius != radius * Engine.SCALE)
+            {
+                joystick.outerRadius = radius * Engine.SCALE;
+            }
+
+            else if(joystick.innerRadius != radius * Engine.SCALE)
+            {
+                joystick.innerRadius = radius * Engine.SCALE;
+            }
+		}
+    }
+    
+    public static function getJoystickRadius(id:Int, outer:Bool = true):Float
+    {
+        var radius:Float = 0;
+        
+        if (joystickMap.exists(id))
+		{
+			var joystick = joystickMap.get(id);
+            
+            radius = ((outer) ? joystick.innerRadius : joystick.outerRadius) / Engine.SCALE;
+		}
+        
+        return radius;
+    }
+    
+    /// --- Other
+    
+    public static function alwaysHideRJ(id:Int)
+    {
+        if (joystickMap.exists(id))
+		{
+			var joystick = joystickMap.get(id);
+
+            joystick.hideWhenReleased = true;
+            joystick.outerImage.visible = false;
+            joystick.innerImage.visible = false;
+		}
+    }
+    
+    public static function setDefaultDirection(id:Int, direction:Float)
+    {
+        if (joystickMap.exists(id))
+		{
+			var joystick = joystickMap.get(id);
+
+            joystick.joystickDefaultDirection = direction;
+            joystick.joystickDirection = direction;
+		}
+    }
+    
+    public static function isJoystickPressed(id:Int):Bool
+    {
+        if (joystickMap.exists(id))
+        {
+            var joystick = joystickMap.get(id);
+            
+            return joystick.isPressed;
+        }
+        
+        return false;
+    }
+    
+    /// --- Set/Get Touch Region properties
+    
+    public static function setTouchRegionForRJ(id:Int, boundsX:Float = 0, boundsY:Float = 0, boundsWidth:Float = 0, boundsHeight:Float = 0)
+    {
+        if (joystickMap.exists(id))
+		{
+			var joystick = joystickMap.get(id);
+
+            if (joystick.joystickType == showWherePressed)
+            {
+                joystick.joystickBounds = new Rectangle(boundsX * Engine.SCALE + viewOffsetX, boundsY * Engine.SCALE + viewOffsetY, boundsWidth * Engine.SCALE, boundsHeight * Engine.SCALE);
+            }
+		}
+    }
+    
+    public static function getTouchRegionPropertyForRJ(id:Int, property:Int):Float
+    {
+        if (joystickMap.exists(id))
+        {
+            var joystick = joystickMap.get(id);
+            
+            if (joystick.joystickType == showWherePressed)
+            {
+                if (property == 1) // Get touch region X
+                {
+                    return joystick.joystickBounds.x - viewOffsetX;
+                }
+                else if (property == 2) // Get touch region Y
+                {
+                    return joystick.joystickBounds.y - viewOffsetY;
+                }
+                else if (property == 3) // Get touch region width
+                {
+                    return joystick.joystickBounds.width / Engine.SCALE;
+                }
+                else // Get touch region Y
+                {
+                    return joystick.joystickBounds.height / Engine.SCALE;
+                }
+            }
+        }
+
+        return 0;
+    }
+    
+    /// --- Joystick Images
+    
+    public static function setJoystickImage(id:Int, outerImage:Bool, imageName:String)
+    {
+        if (joystickMap.exists(id))
+        {
+            var joystick = joystickMap.get(id);
+            var target = Engine.engine.root;
+            var image:BitmapData = null;
+
+            if(Engine.SCALE == 1)
+            {
+                image = Assets.getBitmapData("assets/data/" + imageName + ".png");
+            }
+            
+            else if(Engine.SCALE == 1.5)
+            {
+                image = Assets.getBitmapData("assets/data/" + imageName + "@1.5x.png");
+            }
+            
+            else if(Engine.SCALE == 2)
+            {
+                image = Assets.getBitmapData("assets/data/" + imageName + "@2x.png");
+            }
+            
+            else
+            {
+                image = Assets.getBitmapData("assets/data/" + imageName + "@4x.png");
+            }
+            
+            if (outerImage)
+            {
+                if (joystick.outerImage != null)
+                {
+                    target.removeChild(joystick.outerImage);
+                }
+
+                joystick.outerImage = (new Bitmap(image));
+                joystick.outerImage.x = joystick.center.x - joystick.outerImage.width * 0.5;
+                joystick.outerImage.y = joystick.center.y - joystick.outerImage.height * 0.5;
+                target.addChild(joystick.outerImage);
+                
+                joystick.outerRadius = joystick.outerImage.width * 0.5;
+            }
+            else
+            {
+                if (joystick.innerImage != null)
+                {
+                    target.removeChild(joystick.innerImage);
+                }
+
+                joystick.innerImage = (new Bitmap(image));
+                joystick.innerImage.x = joystick.center.x - joystick.innerImage.width * 0.5;
+                joystick.innerImage.y = joystick.center.y - joystick.innerImage.height * 0.5;
+                target.addChild(joystick.innerImage);
+
+                joystick.innerRadius = joystick.outerRadius - joystick.innerImage.width * 0.5;
+            }
+        }
+    }
+    
+    public static function setJoystickAlpha(id:Int, outer:Bool = true, imageAlpha:Float = 1, whenReleased:Bool = true)
+    {
+        if (joystickMap.exists(id))
+        {
+            var joystick = joystickMap.get(id);
+
+            if (outer)
+            {
+                if (whenReleased)
+                {
+                    joystick.outerAlphaWhenReleased = imageAlpha;
+                    joystick.outerImage.alpha = imageAlpha;
+                }
+                else
+                {
+                    joystick.outerAlphaWhenPressed = imageAlpha;
+                }
+            }
+            else
+            {
+                if (whenReleased)
+                {
+                    joystick.innerAlphaWhenReleased = imageAlpha;
+                    joystick.innerImage.alpha = imageAlpha;
+                }
+                else
+                {
+                    joystick.innerAlphaWhenPressed = imageAlpha;
+                }
+            }
+        }
+    }
 }
