@@ -55,3 +55,35 @@ direction=direction
 distance=distance
 x-center=x-center
 y-center=y-center
+
+# Palette
+
+cat.controls.joystick=Joystick
+cat.controls.joystick.act=Configure Joystick
+
+# Deprecated
+joystick-direction=(DEPRECATED)
+joystick-direction.help=(DEPRECATED)
+
+joystick-info=(DEPRECATED) %0 for %1 [c:mobile]
+joystick-info.help=(DEPRECATED) Joystick direction in degrees (0 - 360) or distance (magnitude) between 0 and 1 inclusive
+
+joystick-magnitude=(DEPRECATED)
+joystick-magnitude.help=(DEPRECATED)
+
+joystick-set-style=(DEPRECATED) set style to %1 for %0 [c:mobile]
+joystick-set-style.help=(DEPRECATED) Fixed in place or show where finger's pressed
+
+joystick-set-xy=(DEPRECATED) set %0 for %1 to %2 [c:mobile]
+joystick-set-xy.help=(DEPRECATED) Set position for joystick (Only works in Fixed mode)
+
+joystick-show-hide=(DEPRECATED) %0 %1 [c:mobile]
+joystick-show-hide.help=(DEPRECATED) Enable/Disable the joystick
+
+fixed=fixed
+show.pressed=show where pressed
+block.enable=enable
+block.disable=disable
+joystick1=joystick 1
+joystick2=joystick 2
+both=both
