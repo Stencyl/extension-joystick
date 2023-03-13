@@ -4,4 +4,4 @@ description=Onscreen joysticks for touch input on mobile devices
 author=Jon
 website=http://www.stencyl.com
 version=1.0.0
-compatibility=mobile
+compatibility=all
