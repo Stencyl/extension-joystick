@@ -19,6 +19,7 @@ class Joystick extends Sprite
 {
     public static var joystickMap:Map<Int, Joystick>;
     
+    private static var staticsInit = false;
     public static function resetStatics():Void
     {
         joystickMap = null;
@@ -66,6 +67,12 @@ class Joystick extends Sprite
 
     private function start()
     {
+        if(!staticsInit)
+        {
+            staticsInit = true;
+            Engine.addReloadListener(resetStatics);
+        }
+
         if(!initialized)
         {
             initialized = true;
