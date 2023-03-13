@@ -1,4 +1,4 @@
-package com.stencyl.models;
+package com.stencyl.joystick;
 
 import com.stencyl.Engine;
 import com.stencyl.utils.Assets;
